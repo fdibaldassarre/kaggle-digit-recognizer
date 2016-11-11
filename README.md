@@ -7,6 +7,7 @@ Simple digit recognizer made with Theano+Lasagne.
 - Python 3
 - Theano
 - Lasagne
+- PIL
 
 ## Get the data
 
@@ -26,3 +27,9 @@ to create the model and run
 to print the success rate on the training set and write the submission file.
 
 The training takes 20-30 minutes on an Intel 6100U cpu and the result model has a 98% success rate.
+
+Use
+```sh
+./recognize.py /path/to/image
+```
+to recognize the digit in an image (see the test folder for sample images).

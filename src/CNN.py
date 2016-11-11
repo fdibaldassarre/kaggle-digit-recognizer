@@ -14,6 +14,8 @@ import lasagne
 from lasagne.nonlinearities import LeakyRectify
 leaky_rectify = LeakyRectify(0.1)
 
+from PIL import Image
+
 class CNN():
   
   def __init__(self):
@@ -277,3 +279,9 @@ class CNN():
       hand.write('ImageId,Label' + '\n')
       for i in range(len(data_y)):
         hand.write(str(i+1) + ',' + str(data_y[i]) + '\n')
+  
+  def convertImageToData(self, imgpath):
+    img = Image.open(imgpath)
+    img = img.convert('L').resize((28,28))
+    data = numpy.asarray(img, dtype=numpy.float32) / 255.
+    return data.reshape(1,1,28,28)
