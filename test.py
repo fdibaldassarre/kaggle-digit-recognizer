@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 
 path = os.path.abspath(__file__)
 MAIN_FOLDER = os.path.dirname(path)
@@ -18,22 +19,11 @@ cnn = CNN()
 if os.path.exists(MODEL_FILE):
   cnn.loadNetwork(MODEL_FILE)
 else:
-  print('WARNING! No model file found. Creating new network.')
-  cnn.initializeNetwork()
-
-data_x, data_y = cnn.loadData(TRAIN_FILE)
-f = cnn.getPredictFunction()
-predict_y = f(data_x)
-right = 0
-n = len(data_y)
-for i in range(n):
-  if predict_y[i] == data_y[i]:
-    right += 1
-
-percentage = 100. * right / n
-print('Success rate on training data: ', percentage, '%')
+  print('WARNING! No model file found.')
+  sys.exit(1)
 
 print('Write submission')
-data_x, _ = cnn.loadData(DATA_FILE, test=True)
+data_x, data_y = cnn.loadData(DATA_FILE, test=True)
+data_x, _ = cnn.reshapeData(data_x, data_y)
 data_y = f(data_x)
 cnn.writeSubmission(data_y, SUBMISSION_FILE)

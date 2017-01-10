@@ -22,9 +22,9 @@ class CNN():
     self.initializeTrainingSettings()
   
   def initializeTrainingSettings(self):
-    self.learning_rate = 0.001
+    self.learning_rate = 0.01
     self.momentum = 0.9
-    self.max_epochs = 100
+    self.max_epochs = 20
     self.minibatch_size = 350
     self.validation_error_target = 0.001
     
@@ -43,26 +43,36 @@ class CNN():
   def initializeShapes(self):
     self.shapes = [0] * 4
     # shape = (input_size, output_size, convolution_size)
-    self.shapes[0] = (1, 4, 5) # Conv layers
-    self.shapes[1] = (4, 8, 3)
-    self.shapes[2] = (200, 512, 0)  # Dense layers
-    self.shapes[3] = (512, 10, 0)
+    im_size = 28
+    # Layer 1: 5-Conv + pooling
+    dim = 1
+    self.shapes[0] = (dim, 8, 5)
+    im_size = (im_size - self.shapes[0][2] + 1)/2
+    # Layer 2: 3-Conv + pooling
+    dim = self.shapes[0][1]
+    self.shapes[1] = (dim, 16, 3)
+    im_size = (im_size - self.shapes[1][2] + 1)/2
+    # Layer 3: Dense
+    dim = int(im_size**2 * self.shapes[1][1])
+    self.shapes[2] = (dim, 512, 0) 
+    # Layer 4: Output
+    dim = self.shapes[2][1]
+    self.shapes[3] = (dim, 10, 0)
     self.n_layers = len(self.shapes)
-    self.n_last_conv = 1
       
   def initializeParameters(self):
     self.parameters = [0] * self.n_layers
     for i in range(self.n_layers):
       n_in, n_out, conv_size = self.shapes[i]
       b_shape = (n_out, )
-      if i <= self.n_last_conv:
+      if conv_size > 0:
         w_shape = (n_out, n_in, conv_size, conv_size)
         w, b = self.randomInitParams(w_shape, b_shape)
         self.parameters[i] = (w, b)
       else:
         w_shape = (n_in, n_out)
         w, b = self.randomInitParams(w_shape, b_shape)
-        self.parameters[i] = (w,b)
+        self.parameters[i] = (w, b)
   
   def randomInitParams(self, w_shape, b_shape):
     # Set weights bound
@@ -104,7 +114,7 @@ class CNN():
     _, n_out, _ = self.shapes[2]
     layer = lasagne.layers.DenseLayer(layer, num_units=n_out, nonlinearity=leaky_rectify, W=w, b=b)
     print(layer.input_shape, '-->', layer.output_shape)
-    # Dense
+    # Output
     w, _ = self.parameters[3]
     _, n_out, _ = self.shapes[3]
     layer = lasagne.layers.DenseLayer(layer, num_units=n_out, nonlinearity=lasagne.nonlinearities.softmax, W=w)
@@ -181,6 +191,20 @@ class CNN():
             print('Saving model...')
             self.saveModel(savepath)
     print('Training ended')
+    return validation_x, validation_y
+  
+  def getSuccessRate(self, data_x, data_y):
+    f = self.getPredictFunction()
+    predict_y = f(data_x)
+    # Find right answers
+    right = 0
+    n = len(data_y)
+    for i in range(n):
+      if predict_y[i] == data_y[i]:
+        right += 1
+    # Calculate percentage
+    percentage = 100. * right / n
+    return percentage
   
   def iterateMiniBatch(self, x, y):
     n = len(x)
@@ -192,10 +216,6 @@ class CNN():
       for s in range(n_minibatches):
         indices = index[s*self.minibatch_size:(s+1)*self.minibatch_size]
         yield x[indices], y[indices]
-      #remainder = n - n_minibatches*self.minibatch_size
-      #if remainder > 0:
-      #  indices = index[n_minibatches*self.minibatch_size:]
-      #  return x[indices], y[indices]
     else:
       # Return the entire batch
       return x, y
@@ -219,8 +239,34 @@ class CNN():
       data_x.append(x)
       data_y.append(y)
     n = len(data_x)
-    data_x = numpy.asarray(data_x, dtype=self.input.dtype).reshape(n, 1, 28, 28)/255.
+    data_x = numpy.asarray(data_x, dtype=self.input.dtype)/255.
     data_y = numpy.asarray(data_y, dtype='int32')
+    return data_x, data_y
+  
+  def increaseData(self, data_x, data_y):
+    # Increase the available data by inverting the colour
+    # of the images
+    data_z = 1 - data_x
+    res_x = numpy.append(data_x, data_z, axis=0)
+    res_y = numpy.append(data_y, data_y, axis=0)
+    return res_x, res_y
+  
+  def shuffleData(self, data_x, data_y):
+    shape_x = data_x.shape
+    shape_y = data_y.shape
+    n = len(data_x)
+    data_x = data_x.reshape(n, -1)
+    data_y = data_y.reshape(1, n)
+    data = numpy.concatenate((data_x, data_y.T), axis=1)
+    numpy.random.shuffle(data)
+    data_x = data[:,:-1].reshape(shape_x)
+    data_y = numpy.asarray(data[:,-1], dtype='int32').reshape(shape_y)
+    return data_x, data_y
+  
+  def reshapeData(self, data_x, data_y):
+    n = len(data_x)
+    data_x = data_x.reshape(n, 1, 28, 28)
+    data_y = data_y.reshape(n)
     return data_x, data_y
   
   def saveModel(self, filepath):
@@ -239,9 +285,8 @@ class CNN():
         model.append((w,))
     # Save to file
     data = json.dumps(model)
-    hand = open(filepath, 'w')
-    hand.write(data)
-    hand.close()
+    with open(filepath, 'w') as hand:
+      hand.write(data)
   
   def loadModelFromFile(self, filepath):
     # Read the model from json file
@@ -280,3 +325,7 @@ class CNN():
     img = img.convert('L').resize((28,28))
     data = numpy.asarray(img, dtype=numpy.float32) / 255.
     return data.reshape(1,1,28,28)
+
+def start():
+  cnn = CNN()
+  return cnn
