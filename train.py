@@ -24,7 +24,7 @@ else:
 print('Loading data...')
 data_x, data_y = cnn.loadData(DATA_FILE)
 # Add more data
-#data_x, data_y = cnn.increaseData(data_x, data_y)
+data_x, data_y = cnn.increaseData(data_x, data_y)
 # Shuffle
 data_x, data_y = cnn.shuffleData(data_x, data_y)
 # Shape for training

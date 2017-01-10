@@ -25,5 +25,6 @@ else:
 print('Write submission')
 data_x, data_y = cnn.loadData(DATA_FILE, test=True)
 data_x, _ = cnn.reshapeData(data_x, data_y)
+f = cnn.getPredictFunction()
 data_y = f(data_x)
 cnn.writeSubmission(data_y, SUBMISSION_FILE)

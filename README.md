@@ -1,6 +1,6 @@
 # Digit Recognizer
 
-Simple digit recognizer made with Theano+Lasagne.
+Digit recognizer made with Theano+Lasagne.
 
 ## Installation requirements
 
@@ -24,9 +24,9 @@ to create the model and run
 ```sh
 ./test.py
 ```
-to print the success rate on the training set and write the submission file.
+to write the submission file.
 
-The training takes 20-30 minutes on an Intel 6100U cpu and the result model has a 98% success rate.
+In my case the training took 37 minutes on an Intel i5-6200U and the model had a 98.9% success rate on the validation set.
 
 Use
 ```sh
