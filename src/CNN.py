@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 import json
-
 import numpy
-
 import time
 rng = numpy.random.RandomState(int(time.time()))
 
@@ -39,7 +37,7 @@ class CNN():
     self.loadLayers()
   
   def initializeInputs(self):
-    self.input = T.tensor4(name='input') # For the love of God DO NOT SET dtype= in any way
+    self.input = T.tensor4(name='input') # DO NOT SET dtype=
     self.output_train = T.ivector('targets')
   
   def initializeShapes(self):
@@ -47,7 +45,7 @@ class CNN():
     # shape = (input_size, output_size, convolution_size)
     self.shapes[0] = (1, 4, 5) # Conv layers
     self.shapes[1] = (4, 8, 3)
-    self.shapes[2] = (200, 512, 0)  # Linear layers
+    self.shapes[2] = (200, 512, 0)  # Dense layers
     self.shapes[3] = (512, 10, 0)
     self.n_layers = len(self.shapes)
     self.n_last_conv = 1
@@ -240,15 +238,12 @@ class CNN():
         w = ws.get_value().tolist()
         model.append((w,))
     # Save to file
-    encoder = json.JSONEncoder()
-    data = encoder.encode(model)
+    data = json.dumps(model)
     hand = open(filepath, 'w')
     hand.write(data)
     hand.close()
   
   def loadModelFromFile(self, filepath):
-    # Json decoder
-    decoder = json.JSONDecoder()
     # Read the model from json file
     hand = open(filepath, 'r')
     tmp = []
@@ -258,7 +253,7 @@ class CNN():
     hand.close()
     tmp = ''.join(tmp)
     # Decode
-    parameters = decoder.decode(tmp)
+    parameters = json.loads(tmp)
     self.loadModel(parameters)
   
   def loadModel(self, parameters):
