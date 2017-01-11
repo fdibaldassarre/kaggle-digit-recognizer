@@ -14,6 +14,8 @@ leaky_rectify = LeakyRectify(0.1)
 
 from PIL import Image
 
+from src.Constants import MODELS_FOLDER
+
 class CNN():
   
   def __init__(self):
@@ -21,12 +23,15 @@ class CNN():
     self.initializeShapes()
     self.initializeTrainingSettings()
   
+  def getSavepath(self):  
+    return os.path.join(MODELS_FOLDER, str(int(time.time())) + '.json')
+  
   def initializeTrainingSettings(self):
     self.learning_rate = 0.01
     self.momentum = 0.9
-    self.max_epochs = 20
+    self.max_epochs = 60
     self.minibatch_size = 350
-    self.validation_error_target = 0.001
+    self.validation_error_target = 0.01
     
   def initializeNetwork(self):
     self.initializeParameters()
@@ -54,7 +59,7 @@ class CNN():
     im_size = (im_size - self.shapes[1][2] + 1)/2
     # Layer 3: Dense
     dim = int(im_size**2 * self.shapes[1][1])
-    self.shapes[2] = (dim, 512, 0) 
+    self.shapes[2] = (dim, 1024, 0) 
     # Layer 4: Output
     dim = self.shapes[2][1]
     self.shapes[3] = (dim, 10, 0)
@@ -143,6 +148,8 @@ class CNN():
     return theano.function([self.input, self.output_train], cost_function)
   
   def train(self, data_x, data_y, savepath=None):
+    if savepath is None:
+      savepath = self.getSavepath()
     # Split in train data + validation data
     n_data = len(data_x)
     n_train = int(n_data*0.80)
@@ -151,6 +158,18 @@ class CNN():
     train_y = data_y[:n_train]
     validation_x = data_x[n_train:, :, :, :]
     validation_y = data_y[n_train:]
+    # Start training
+    train_data = (train_x, train_y)
+    validation_data = (validation_x, validation_y)
+    try:
+      self.trainRun(train_data, validation_data, savepath)
+    except KeyboardInterrupt:
+      print('Stop training')
+    return validation_data, savepath
+    
+  def trainRun(self, train_data, validation_data, savepath):
+    train_x, train_y = train_data
+    validation_x, validation_y = validation_data
     # Get training and validation functions
     t = self.buildTrainingFunction()
     v = self.buildValidationFunction()
@@ -181,17 +200,12 @@ class CNN():
         if validate_error <= self.validation_error_target:
           print('Reached validation error target, stop training')
           best_validation = validate_error
-          if savepath is not None:
-            print('Saving model...')
-            self.saveModel(savepath)
+          self.saveModel(savepath)
           break
         elif best_validation is None or validate_error < best_validation:
           best_validation = validate_error
-          if savepath is not None:
-            print('Saving model...')
-            self.saveModel(savepath)
+          self.saveModel(savepath)
     print('Training ended')
-    return validation_x, validation_y
   
   def getSuccessRate(self, data_x, data_y):
     f = self.getPredictFunction()

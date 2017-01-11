@@ -3,10 +3,8 @@
 import os
 import time
 
-path = os.path.abspath(__file__)
-MAIN_FOLDER = os.path.dirname(path)
-MODELS_FOLDER = os.path.join(MAIN_FOLDER, 'models/')
-DATA_FOLDER = os.path.join(MAIN_FOLDER, 'data/')
+from src.Constants import MODELS_FOLDER
+from src.Constants import DATA_FOLDER
 
 MODEL_FILE = os.path.join(MODELS_FOLDER, 'model.json')
 DATA_FILE = os.path.join(DATA_FOLDER, 'train.csv')
@@ -32,10 +30,13 @@ data_x, data_y = cnn.reshapeData(data_x, data_y)
 # Train
 print('Training...')
 start_time = time.time()
-valid_x, valid_y = cnn.train(data_x, data_y, savepath=MODEL_FILE)
+validation_data, _ = cnn.train(data_x, data_y, savepath=MODEL_FILE)
 end_time = time.time()
 time_train = round((end_time - start_time) / 60)
 print('Training took', time_train, 'minutes')
 # Get validation success rate
+print('Reload best model up to now')
+self.loadModel(MODEL_FILE)
+valid_x, valid_y = validation_data
 success_rate = cnn.getSuccessRate(valid_x, valid_y)
 print('Success rate on validation:', success_rate, '%')
