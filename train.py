@@ -34,9 +34,11 @@ validation_data, _ = cnn.train(data_x, data_y, savepath=MODEL_FILE)
 end_time = time.time()
 time_train = round((end_time - start_time) / 60)
 print('Training took', time_train, 'minutes')
-# Get validation success rate
+# Reload best model
 print('Reload best model up to now')
 self.loadModel(MODEL_FILE)
+# Get validation success rate
+print('Get success rate')
 valid_x, valid_y = validation_data
 success_rate = cnn.getSuccessRate(valid_x, valid_y)
 print('Success rate on validation:', success_rate, '%')
