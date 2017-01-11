@@ -26,7 +26,7 @@ to create the model and run
 ```
 to write the submission file.
 
-In my case the training took 37 minutes on an Intel i5-6200U and the model had a 98.9% success rate on the validation set.
+In my case the training took 157 minutes on an Intel i5-6200U and the model had a 99.7% success rate on the validation set.
 
 Use
 ```sh
